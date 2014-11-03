@@ -85,6 +85,7 @@ def GOPATH_src_rel(p):
 
 
 def build(tags):
+  """Runs go build on all directories containing .go files."""
   extra = []
   for t in tags:
     extra.extend(('-tag', t))
@@ -93,6 +94,7 @@ def build(tags):
 
 
 def errcheck():
+  """Runs errcheck on all directories containing .go files."""
   # TODO(maruel): I don't know what happened around Oct 2014 but errcheck
   # became super slow.
   cmd = ['errcheck'] + [GOPATH_src_rel(d) for d in go_dirs()]
@@ -100,6 +102,7 @@ def errcheck():
 
 
 def gofmt():
+  """Runs gofmt in check mode."""
   # TODO(maruel): Likely always redundant with goimports.
   # gofmt doesn't return non-zero even if some files need to be updated.
   out = subprocess.check_output(['gofmt', '-l', '-s', '.'])
@@ -111,6 +114,7 @@ def gofmt():
 
 
 def goimports():
+  """Runs goimports in check mode."""
   # goimports doesn't return non-zero even if some files need to be updated.
   out = subprocess.check_output(['goimports', '-l', '.'])
   if out:
@@ -121,6 +125,7 @@ def goimports():
 
 
 def golint():
+  """Runs golint."""
   # golint doesn't return non-zero ever.
   out = subprocess.check_output(['golint'] + [d for d in go_dirs()])
   if out:
@@ -131,6 +136,7 @@ def golint():
 
 
 def govet():
+  """Runs go tool vet."""
   # govet is very noisy about "composite literal uses unkeyed fields" which
   # cannot be turned off so strip these and ignore the return code.
   proc = subprocess.Popen(
@@ -146,6 +152,7 @@ def govet():
 
 
 def test():
+  """Runs go test on all directories containing go test files."""
   cmd = ['go', 'test', '-cover'] + [GOPATH_src_rel(d) for d in test_dirs()]
   return subprocess.call(cmd)
 
@@ -215,6 +222,8 @@ def main(run_golint=True, run_govet=True):
       '--govet', action='store_true', help=optparse.SUPPRESS_HELP)
   parser.add_option(
       '--tag', action='append', default=[], help=optparse.SUPPRESS_HELP)
+  parser.add_option(
+      '--test', action='store_true', help=optparse.SUPPRESS_HELP)
   options, args = parser.parse_args()
   if args:
     parser.error('Unknown args: %s' % args)
@@ -233,6 +242,8 @@ def main(run_golint=True, run_govet=True):
     return golint()
   if options.govet:
     return govet()
+  if options.test:
+    return test()
 
   return run_checks(os.path.dirname(THIS_DIR), [], run_golint, run_govet)
 

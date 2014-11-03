@@ -228,7 +228,8 @@ def run_checks(root, tags, run_golint, run_govet):
     if profile_path:
       # Make sure to have registered to https://coveralls.io first!
       if os.environ.get('TRAVIS_JOB_ID'):
-        subprocess.call(['goveralls', '-coverprofile=%s' % profile_path])
+        if subprocess.call(['goveralls', '-coverprofile=%s' % profile_path]):
+          failed = True
       else:
         subprocess.call(['go', 'tool', 'cover', '-func', profile_path])
     if tmpdir:

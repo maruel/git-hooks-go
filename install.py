@@ -16,15 +16,22 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def main():
   try:
+    parent = os.path.dirname(THIS_DIR)
     git_dir = subprocess.check_output(
         ['git', 'rev-parse', '--git-dir'],
-        cwd=os.path.dirname(THIS_DIR)).strip()
+        cwd=parent).strip()
+    git_dir = os.path.normpath(os.path.join(parent, git_dir))
   except subprocess.CalledProcessError:
     print >> sys.stderr, 'Failed to find parent git repository root'
     return 1
 
   git_hook_dir = os.path.join(git_dir, 'hooks')
   precommit_dest = os.path.join(git_hook_dir, 'pre-commit')
+  if os.path.isfile(precommit_test):
+    # Better be safe than sorry.
+    print >> sys.stderr, '%s already exist, aborting' % precommit_dest
+    return 1
+
   if sys.platform == 'win32':
     # This means it'll get stale on Windows.
     shutil.copyfile(os.path.join(THIS_DIR, 'pre-commit'), precommit_dest)

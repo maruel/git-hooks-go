@@ -78,7 +78,7 @@ def test_dirs():
 def GOPATH_src_rel(p):
   """Returns the path relative to $GOPATH/src."""
   root = os.path.realpath(os.path.join(os.environ['GOPATH'], 'src'))
-  return os.path.relpath(d, root)
+  return os.path.relpath(p, root)
 
 
 ### Checks.

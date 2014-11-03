@@ -10,7 +10,7 @@ import sys
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.insert(0, os.path.join(THIS_DIR, 'git-hooks-go'))
+sys.path.insert(0, os.path.join(THIS_DIR, 'git-hooks-go'))
 
 import presubmit_impl
 

@@ -178,9 +178,9 @@ def run_checks(root, tags, run_golint, run_govet):
   # There starts the cheezy part that may return false positives. I'm sorry
   # David.
   if run_golint:
-    proc.append(call([sys.executable, THIS_FILE, '--golint'], root))
+    procs.append(call([sys.executable, THIS_FILE, '--golint'], root))
   if run_govet:
-    proc.append(call([sys.executable, THIS_FILE, '--govet'], root))
+    procs.append(call([sys.executable, THIS_FILE, '--govet'], root))
 
   failed = False
   for p in procs:

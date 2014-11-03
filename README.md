@@ -29,4 +29,5 @@ The normal workflow to setup git-hooks-go for a golang repository is:
     git submodule init
     git submodule add https://github.com/maruel/git-hooks-go
     ln -s git-hooks-go/presubmit.py
+    git add presubmit.py
     git commit -a -m "Add git-hooks-go pre-commit git hook."

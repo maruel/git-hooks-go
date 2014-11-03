@@ -1,0 +1,16 @@
+# Install with:
+# ln -s git-hooks-go/sample.travis.yml .travis.yml
+
+language: go
+
+go:
+- 1.3
+
+install:
+  - go get github.com/axw/gocov/gocov
+  - go get github.com/mattn/goveralls
+  - go get code.google.com/p/go.tools/cmd/cover
+
+script:
+  - ./git-hooks-go/travis_check.sh
+  - $HOME/gopath/bin/goveralls -coverprofile=profile.cov

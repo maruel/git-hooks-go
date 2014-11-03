@@ -1,8 +1,12 @@
-Generic git pre-commit hook for Golang projects
-===============================================
+git pre-commit hook for Golang projects
+=======================================
 
-`presubmit_impl.py` runs multiple tests on a go project to ensure code health.
-It is designed to be called on commit. It:
+`presubmit_impl.py` runs multiple tests on a go project to ensure code health
+*before committing*. It also includes tooling to run automated testing on
+travis-ci.org and code coverage on coveralls.io.
+
+It is designed to be called on pre-commit so that the committed code is clean.
+It:
 
   * [Build](https://golang.org/pkg/go/build/) all directories with .go files found
   * Run [all test found](https://golang.org/pkg/testing/)
@@ -21,7 +25,7 @@ commit, run:
     ./install.py
 
 
-Initial project setup
+Pre commit hook setup
 ---------------------
 
 The normal workflow to setup git-hooks-go for a golang repository is:
@@ -34,3 +38,17 @@ The normal workflow to setup git-hooks-go for a golang repository is:
     git add presubmit.py
     python git-hooks-go/install.py
     git commit -a -m "Add github.com/maruel/git-hooks-go pre-commit git hook."
+
+
+Post commit hook setup
+----------------------
+
+Post commit CI works with travis-ci.org and coveralls.io. Do:
+
+    cp git-hooks-go/sample.travis.yml .travis.yml
+    git add .travis.yml
+    git commit -m "Added .travis.yml"
+
+
+Visit https://travis-ci.org and connect your github account (or whatever git
+host provider) to travis. Then do the same via https://coveralls.io.

@@ -27,7 +27,7 @@ def main():
 
   git_hook_dir = os.path.join(git_dir, 'hooks')
   precommit_dest = os.path.join(git_hook_dir, 'pre-commit')
-  if os.path.isfile(precommit_test):
+  if os.path.isfile(precommit_dest):
     # Better be safe than sorry.
     print >> sys.stderr, '%s already exist, aborting' % precommit_dest
     return 1

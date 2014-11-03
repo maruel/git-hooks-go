@@ -7,6 +7,8 @@
 
 Some of these checks are actually not recommended to be run on automated checks
 by their author so it is recommended to not be too strict about it.
+
+Automatically integrates with coveralls.io when run on travis-ci.org.
 """
 
 import glob

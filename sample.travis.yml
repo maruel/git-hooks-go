@@ -1,5 +1,7 @@
 # Install with:
-# ln -s git-hooks-go/sample.travis.yml .travis.yml
+# cp git-hooks-go/sample.travis.yml .travis.yml
+#
+# travis-ci.org does *not* support .travis.yml to be a symlink!
 
 language: go
 

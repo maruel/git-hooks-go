@@ -5,7 +5,11 @@ Generic git pre-commit hook for Golang projects
 It is designed to be called on commit. It:
 
   * Build all directories with .go files found
-  * Run all test founds
+  * Run all test found
+  * Run [errcheck](https://github.com/kisielk/errcheck)
+  * Run gofmt and goimports (redundant except for gofmt -s)
+  * (optionally) Run govet
+  * (optionally) Run golint
 
 
 Hook Installation

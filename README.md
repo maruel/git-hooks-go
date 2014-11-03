@@ -1,5 +1,5 @@
 Generic git pre-commit hook for Golang projects
------------------------------------------------
+===============================================
 
 `presubmit_impl.py` runs multiple tests on a go project to ensure code health.
 It is designed to be called on commit. It:
@@ -13,7 +13,7 @@ It is designed to be called on commit. It:
 
 
 Hook Installation
-=================
+-----------------
 
 To install the git pre-commit hook which runs `presubmit.py` automatically on
 commit, run:
@@ -22,7 +22,7 @@ commit, run:
 
 
 Initial project setup
-=====================
+---------------------
 
 The normal workflow to setup git-hooks-go for a golang repository is:
 

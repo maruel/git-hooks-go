@@ -85,12 +85,11 @@ def GOPATH_src_rel(p):
 
 
 def build(tags):
-  """Runs go build on all directories containing .go files."""
+  """Builds everything inside the current directory via 'go build ./...'."""
   extra = []
   for t in tags:
     extra.extend(('-tag', t))
-  cmd = ['go', 'build'] + extra + [GOPATH_src_rel(d) for d in go_dirs()]
-  return subprocess.call(cmd)
+  return subprocess.call(['go', 'build'] + extra + ['./...'])
 
 
 def errcheck():
@@ -177,11 +176,17 @@ def run_checks(root, tags, run_golint, run_govet):
     extra.extend(('--tag', t))
   procs = [
     call([sys.executable, THIS_FILE, '--build'] + extra, root),
-    call([sys.executable, THIS_FILE, '--test'], root),
     call([sys.executable, THIS_FILE, '--errcheck'], root),
     call([sys.executable, THIS_FILE, '--goimports'], root),
     call([sys.executable, THIS_FILE, '--gofmt'], root),
   ]
+
+  # Add tests manually instead of using './...'. The reason is that it permits
+  # running all the tests concurrently, which saves a lot of time when there's
+  # many packages.
+  for t in test_dirs():
+    procs.append(call(['go', 'test', '-cover', GOPATH_src_rel(t)], root))
+
   # There starts the cheezy part that may return false positives. I'm sorry
   # David.
   if run_golint:
@@ -189,6 +194,7 @@ def run_checks(root, tags, run_golint, run_govet):
   if run_govet:
     procs.append(call([sys.executable, THIS_FILE, '--govet'], root))
 
+  # Collect the results of all the tests that ran concurrently.
   failed = False
   for p in procs:
     out = drain(p)
@@ -222,8 +228,6 @@ def main(run_golint=True, run_govet=True):
       '--govet', action='store_true', help=optparse.SUPPRESS_HELP)
   parser.add_option(
       '--tag', action='append', default=[], help=optparse.SUPPRESS_HELP)
-  parser.add_option(
-      '--test', action='store_true', help=optparse.SUPPRESS_HELP)
   options, args = parser.parse_args()
   if args:
     parser.error('Unknown args: %s' % args)
@@ -242,8 +246,6 @@ def main(run_golint=True, run_govet=True):
     return golint()
   if options.govet:
     return govet()
-  if options.test:
-    return test()
 
   return run_checks(os.path.dirname(THIS_DIR), [], run_golint, run_govet)
 

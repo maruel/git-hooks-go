@@ -13,19 +13,8 @@
 
 set -e
 
-# Automatic checks
-test -z "$(gofmt -l -s -w .  | tee /dev/stderr)"
-test -z "$(goimports -l -w . | tee /dev/stderr)"
-
-# TODO(maruel): These two may not be of interest generally:
-test -z "$(golint .          | tee /dev/stderr)"
-go vet ./...
-
-go test -race ./...
-
 # Run test coverage on each subdirectories and merge the coverage profile.
 echo "mode: count" > profile.cov
-
 # Standard go tooling behavior is to ignore dirs with leading underscores
 for dir in $(find . -maxdepth 10 -not -path './.git*' -not -path '*/_*' -type d); do
   if ls $dir/*.go &> /dev/null; then
@@ -36,9 +25,17 @@ for dir in $(find . -maxdepth 10 -not -path './.git*' -not -path '*/_*' -type d)
     fi
   fi
 done
-
 go tool cover -func profile.cov
+# Make sure to have registered to https://coveralls.io first!
+goveralls -coverprofile=profile.cov
 
-# To submit the test coverage result to coveralls.io,
-# use goveralls (https://github.com/mattn/goveralls)
-# goveralls -coverprofile=profile.cov
+# Runs tests a second time, this time in race detector mode.
+go test -race ./...
+
+# Formatting checks.
+test -z "$(gofmt -l -s -w .  | tee /dev/stderr)"
+test -z "$(goimports -l -w . | tee /dev/stderr)"
+
+# TODO(maruel): These two may not be of interest generally:
+test -z "$(golint .          | tee /dev/stderr)"
+go vet ./...

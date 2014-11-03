@@ -15,4 +15,3 @@ install:
 
 script:
   - ./git-hooks-go/travis_check.sh
-  - $HOME/gopath/bin/goveralls -coverprofile=profile.cov

@@ -9,11 +9,14 @@ Some of these checks are actually not recommended to be run on automated checks
 by their author so it is recommended to not be too strict about it.
 """
 
+import glob
 import logging
 import optparse
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 
@@ -56,14 +59,14 @@ def go_dirs():
   out = []
   for r, d, f in os.walk(os.path.realpath('.')):
     for i in xrange(len(d) - 1, -1, -1):
-      if d[i].startswith('.'):
+      if d[i].startswith(('.', '_')):
         del d[i]
     if any(i.endswith('.go') and not i.endswith('_test.go') for i in f):
       out.append(r)
   return out
 
 
-def test_dirs():
+def get_test_dirs():
   """Returns the list of directories with go test (*_test.go) files."""
   out = []
   for r, d, f in os.walk(os.path.realpath('.')):
@@ -150,12 +153,6 @@ def govet():
   return 0
 
 
-def test():
-  """Runs go test on all directories containing go test files."""
-  cmd = ['go', 'test', '-cover'] + [GOPATH_src_rel(d) for d in test_dirs()]
-  return subprocess.call(cmd)
-
-
 def run_checks(root, tags, run_golint, run_govet):
   start = time.time()
   procs = [
@@ -184,8 +181,9 @@ def run_checks(root, tags, run_golint, run_govet):
   # Add tests manually instead of using './...'. The reason is that it permits
   # running all the tests concurrently, which saves a lot of time when there's
   # many packages.
-  for t in test_dirs():
-    procs.append(call(['go', 'test', '-cover', GOPATH_src_rel(t)], root))
+  test_dirs = get_test_dirs()
+  for t in test_dirs:
+    procs.append(call(['go', 'test', '-race', GOPATH_src_rel(t)], root))
 
   # There starts the cheezy part that may return false positives. I'm sorry
   # David.
@@ -194,13 +192,47 @@ def run_checks(root, tags, run_golint, run_govet):
   if run_govet:
     procs.append(call([sys.executable, THIS_FILE, '--govet'], root))
 
-  # Collect the results of all the tests that ran concurrently.
-  failed = False
-  for p in procs:
-    out = drain(p)
-    if out:
-      failed = True
-      print out
+  # Coverage is tricker. Only run it on travis.
+  run_coverage = bool(os.environ.get('TRAVIS_JOB_ID'))
+  tmpdir = None
+  profile_path = None
+  try:
+    if run_coverage:
+      tmpdir = tempfile.mkdtemp(prefix='presubmit_coverage')
+      for i, t in enumerate(test_dirs):
+        cmd = [
+          'go', 'test', '-covermode=count', '-coverpkg', './...',
+          '-coverprofile=' + os.path.join(tmpdir, 'test%d.cov' % i),
+          GOPATH_src_rel(t),
+        ]
+        procs.append(call(cmd, root))
+
+    # Collect the results of all the tests that ran concurrently.
+    failed = False
+    for p in procs:
+      out = drain(p)
+      if out:
+        failed = True
+        print out
+
+    if run_coverage:
+      # Merge the profiles. Very hacky.
+      profile_path = os.path.join(tmpdir, 'profile.cov')
+      with open(profile_path, 'wb') as out:
+        out.write('mode: count\n')
+        for i in glob.glob(os.path.join(tmpdir, 'test*.cov')):
+          with open(i, 'rb') as f:
+            # Strip the first line.
+            out.write(''.join(f.read().splitlines(True)[1:]))
+  finally:
+    if profile_path:
+      # Make sure to have registered to https://coveralls.io first!
+      if os.environ.get('TRAVIS_JOB_ID'):
+        subprocess.call(['goveralls', '-coverprofile=%s' % profile_path])
+      else:
+        subprocess.call(['go', 'tool', 'cover', '-func', profile_path])
+    if tmpdir:
+      shutil.rmtree(tmpdir)
 
   end = time.time()
   if failed:

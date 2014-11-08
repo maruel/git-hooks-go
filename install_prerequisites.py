@@ -9,68 +9,46 @@ import logging
 import optparse
 import subprocess
 import sys
-import threading
 
 
-def check_or_install(cmds, urls, update):
-  """Tries to run commands to see if the command exists.
-
-  If not, automatically install it.
-  """
-  for cmd, exitcode in cmds:
+def install_prerequisites(update):
+  to_install = [
+    (['errcheck', '-h'], 2, 'github.com/kisielk/errcheck'),
+    (['go', 'tool', 'cover', '-h'], 1, 'code.google.com/p/go.tools/cmd/cover'),
+    (['go', 'tool', 'vet', '-h'], 1, 'code.google.com/p/go.tools/cmd/vet'),
+    (['gocov', '-h'], 2, 'github.com/axw/gocov/gocov'),
+    (['goimports', '-h'], 2, 'code.google.com/p/go.tools/cmd/goimports'),
+    (['golint', '-h'], 2, 'github.com/golang/lint/golint'),
+    (['goveralls', '-h'], 2, 'github.com/mattn/goveralls'),
+  ]
+  urls = []
+  for cmd, exitcode, url in to_install:
     try:
       logging.info('%s', ' '.join(cmd))
       p = subprocess.Popen(
           cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
       p.communicate()
-      if p.returncode != exitcode:
-        break
+      if p.returncode == exitcode:
+        continue
     except OSError:
-      break
-  else:
-    return
+      pass
+    urls.append(url)
 
-  for url in urls:
-    sys.stdout.write('Warning: installing %s\n' % url)
+  out = 0
+  if urls:
+    urls.sort()
+    print('Installing:')
+    print('\n'.join('  ' + url for url in urls))
     cmd = ['go', 'get']
     if update:
       cmd.append('-u')
-    cmd.append(url)
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    out = p.communicate()[0]
-    if p.returncode:
-      sys.stderr.write(out)
-
-
-def install_prerequisites(update):
-  to_install = [
-    ([(['errcheck', '-h'], 2)], ['github.com/kisielk/errcheck']),
-    (
-      [
-        (['go', 'tool', 'cover', '-h'], 1),
-        (['go', 'tool', 'vet', '-h'], 1),
-        (['goimports', '-h'], 2),
-      ],
-      [
-        'code.google.com/p/go.tools/cmd/cover',
-        'code.google.com/p/go.tools/cmd/vet',
-        'code.google.com/p/go.tools/cmd/goimports',
-      ],
-    ),
-    ([(['gocov', '-h'], 2)], ['github.com/axw/gocov/gocov']),
-    ([(['golint', '-h'], 2)], ['github.com/golang/lint/golint']),
-    ([(['goveralls', '-h'], 2)], ['github.com/mattn/goveralls']),
-  ]
-  threads = []
-  for cmds, urls in to_install:
-    t = threading.Thread(
-        name=urls[0], target=check_or_install, args=(cmds, urls, update))
-    t.start()
-    threads.append(t)
-  for t in threads:
-    t.join()
-  print('Prerequisites check completed.')
-  return 0
+    cmd.extend(urls)
+    out = subprocess.call(cmd)
+  if not out:
+    print('Prerequisites check completed.')
+  else:
+    print('Prerequisites installation failed.')
+  return out
 
 
 def main(run_golint=True, run_govet=True):

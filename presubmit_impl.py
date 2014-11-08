@@ -196,7 +196,7 @@ def run_checks(root, tags, run_golint, run_govet):
       if out:
         failed = True
         print('%s' % ' '.join(cmd))
-        print('  ' + l for l in out.splitlines())
+        print('\n'.join('  ' + l for l in out.splitlines()))
 
     if run_coverage:
       # Merge the profiles. Very hacky.

@@ -15,6 +15,7 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def main():
+  os.chdir(THIS_DIR)
   returncode = subprocess.call([sys.executable, 'install_prerequisites.py'])
   if returncode:
     return returncode

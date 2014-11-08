@@ -3,6 +3,12 @@
 # Use of this source code is governed under the Apache License, Version 2.0
 # that can be found in the LICENSE file.
 
+# pre-commit git hook to runs presubmit.py on the tree with unstaged changes
+# removed.
+#
+# This file is meant to be symlinked* into .git/hooks.
+# * Copied on Windows due to Windows being Windows.
+
 
 # Redirect output to stderr.
 exec 1>&2
@@ -17,29 +23,6 @@ run_checks() {
     echo "it or put it in the .gitignore or your global exclusion list:"
     echo "$untracked"
     return 1
-  fi
-
-  # Ensure all .go files are properly formatted.
-  gofiles="$(git diff --cached --name-only --diff-filter=ACM | grep '.go$')"
-  if [ "$gofiles" != "" ]; then
-    # TODO(maruel): Make it work with with whitespaces.
-    unformatted=$(gofmt -l $gofiles)
-    if [ "$unformatted" != "" ]; then
-      echo "Go files must be formatted with gofmt. Please run:"
-      for fn in $unformatted; do
-        echo "  gofmt -w $PWD/$fn"
-      done
-      return 1
-    fi
-  fi
-
-  # If there are whitespace errors, print the offending file names and fail.
-  # It's somewhat redundant with the gofmt check above but it also checks
-  # non-.go files.
-  git diff-index --check --cached $against --
-  result=$?
-  if [ $result != 0 ]; then
-    return $result
   fi
 
   # Run the presubmit check.

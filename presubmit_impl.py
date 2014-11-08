@@ -28,9 +28,12 @@ THIS_DIR = os.path.dirname(THIS_FILE)
 
 def call(cmd, reldir):
   logging.info('cwd=%-16s; %s', reldir, ' '.join(cmd))
-  return subprocess.Popen(
+  proc = subprocess.Popen(
       cmd, cwd=os.path.join(THIS_DIR, reldir),
       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+  # Simplify our life by injecting cmd into Popen instance.
+  proc.cmd = cmd
+  return proc
 
 
 def drain(proc):
@@ -39,21 +42,8 @@ def drain(proc):
     return 'Process failed'
   out = proc.communicate()[0]
   if proc.returncode:
-    return out
-
-
-def check_or_install(tool, *urls):
-  """Tries to run a command to see if the command exists.
-
-  If not, automatically install it.
-  """
-  try:
-    return call(tool, THIS_DIR)
-  except OSError:
-    for url in urls:
-      print('Warning: installing %s' % url)
-      subprocess.check_call(['go', 'get', '-u', url])
-    return call(tool, THIS_DIR)
+    return out, proc.cmd
+  return None, None
 
 
 def go_dirs():
@@ -160,19 +150,6 @@ def govet():
 
 def run_checks(root, tags, run_golint, run_govet):
   start = time.time()
-  procs = [
-    check_or_install(['errcheck'], 'github.com/kisielk/errcheck'),
-    check_or_install(
-        ['goimports', '.'],
-        'code.google.com/p/go.tools/cmd/cover',
-        'code.google.com/p/go.tools/cmd/goimports',
-        'code.google.com/p/go.tools/cmd/vet'),
-    check_or_install(['golint'], 'github.com/golang/lint/golint'),
-  ]
-  while procs:
-    drain(procs.pop(0))
-  logging.info('Prerequisites check completed.')
-
   extra = []
   for t in tags or []:
     extra.extend(('--tag', t))
@@ -215,10 +192,11 @@ def run_checks(root, tags, run_golint, run_govet):
     # Collect the results of all the tests that ran concurrently.
     failed = False
     for p in procs:
-      out = drain(p)
+      out, cmd = drain(p)
       if out:
         failed = True
-        print out
+        print('%s' % ' '.join(cmd))
+        print('  ' + l for l in out.splitlines())
 
     if run_coverage:
       # Merge the profiles. Very hacky.

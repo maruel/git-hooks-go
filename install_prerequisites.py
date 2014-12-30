@@ -14,10 +14,10 @@ import sys
 def install_prerequisites(update):
   to_install = [
     (['errcheck', '-h'], 2, 'github.com/kisielk/errcheck'),
-    (['go', 'tool', 'cover', '-h'], 1, 'code.google.com/p/go.tools/cmd/cover'),
-    (['go', 'tool', 'vet', '-h'], 1, 'code.google.com/p/go.tools/cmd/vet'),
+    (['go', 'tool', 'cover', '-h'], 1, 'golang.org/x/tools/cmd/cover'),
+    (['go', 'tool', 'vet', '-h'], 1, 'golang.org/x/tools/cmd/vet'),
     (['gocov', '-h'], 2, 'github.com/axw/gocov/gocov'),
-    (['goimports', '-h'], 2, 'code.google.com/p/go.tools/cmd/goimports'),
+    (['goimports', '-h'], 2, 'golang.org/x/tools/cmd/goimports'),
     (['golint', '-h'], 2, 'github.com/golang/lint/golint'),
     (['goveralls', '-h'], 2, 'github.com/mattn/goveralls'),
   ]

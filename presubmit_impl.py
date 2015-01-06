@@ -199,14 +199,23 @@ def run_checks(root, tags, run_golint, run_govet):
         print('\n'.join('  ' + l for l in out.splitlines()))
 
     if run_coverage:
-      # Merge the profiles. Very hacky.
+      # Merge the profiles. Sums all the counts.
+      # Format is "file.go:XX.YY,ZZ.II J K"
+      # J is number of statements, K is count.
       profile_path = os.path.join(tmpdir, 'profile.cov')
+      counts = {}
+      for i in glob.glob(os.path.join(tmpdir, 'test*.cov')):
+        with open(i) as f:
+          # Strip the first line.
+          f.readline()
+          for l in f:
+            stm, count = l.rsplit(' ', 1)
+            counts.setdefault(stm, 0)
+            counts[stm] += int(count)
       with open(profile_path, 'wb') as out:
         out.write('mode: count\n')
-        for i in glob.glob(os.path.join(tmpdir, 'test*.cov')):
-          with open(i, 'rb') as f:
-            # Strip the first line.
-            out.write(''.join(f.read().splitlines(True)[1:]))
+        for stm, count in sorted(counts.iteritems()):
+          out.write('%s %d\n' % (stm, count))
   finally:
     if profile_path:
       # Make sure to have registered to https://coveralls.io first!

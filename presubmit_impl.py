@@ -84,9 +84,7 @@ def GOPATH_src_rel(p):
 
 def build(tags):
   """Builds everything inside the current directory via 'go build ./...'."""
-  extra = []
-  for t in tags:
-    extra.extend(('-tag', t))
+  extra = ['-tags', tags] if tags else []
   return subprocess.call(['go', 'build'] + extra + ['./...'])
 
 
@@ -150,15 +148,15 @@ def govet():
 
 def run_checks(root, tags, run_golint, run_govet):
   start = time.time()
-  extra = []
-  for t in tags or []:
-    extra.extend(('--tag', t))
   procs = [
-    call([sys.executable, THIS_FILE, '--build'] + extra, root),
+    call([sys.executable, THIS_FILE, '--build'], root),
     call([sys.executable, THIS_FILE, '--errcheck'], root),
     call([sys.executable, THIS_FILE, '--goimports'], root),
     call([sys.executable, THIS_FILE, '--gofmt'], root),
   ]
+  if tags:
+    procs.append(
+        call([sys.executable, THIS_FILE, '--build', '--tags', tags], root))
 
   # Add tests manually instead of using './...'. The reason is that it permits
   # running all the tests concurrently, which saves a lot of time when there's
@@ -235,7 +233,7 @@ def run_checks(root, tags, run_golint, run_govet):
   return 0
 
 
-def main(run_golint=True, run_govet=True):
+def main(tags='', run_golint=True, run_govet=True):
   parser = optparse.OptionParser(description=sys.modules[__name__].__doc__)
   parser.add_option(
       '-v', '--verbose', action='store_true', help='Logs what is being run')
@@ -252,7 +250,8 @@ def main(run_golint=True, run_govet=True):
   parser.add_option(
       '--govet', action='store_true', help=optparse.SUPPRESS_HELP)
   parser.add_option(
-      '--tag', action='append', default=[], help=optparse.SUPPRESS_HELP)
+      '--tags', default=tags,
+      help='Comma separated tags to be passed to go build -tags')
   options, args = parser.parse_args()
   if args:
     parser.error('Unknown args: %s' % args)
@@ -260,7 +259,7 @@ def main(run_golint=True, run_govet=True):
       level=logging.DEBUG if options.verbose else logging.ERROR,
       format='%(levelname)-5s: %(message)s')
   if options.build:
-    return build(options.tag)
+    return build(options.tags)
   if options.errcheck:
     return errcheck()
   if options.gofmt:
@@ -272,7 +271,8 @@ def main(run_golint=True, run_govet=True):
   if options.govet:
     return govet()
 
-  return run_checks(os.path.dirname(THIS_DIR), [], run_golint, run_govet)
+  return run_checks(
+      os.path.dirname(THIS_DIR), options.tags, run_golint, run_govet)
 
 
 if __name__ == '__main__':

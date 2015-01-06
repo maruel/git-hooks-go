@@ -17,4 +17,4 @@ import presubmit_impl
 
 if __name__ == '__main__':
   # Disable golint or govet if desired.
-  sys.exit(presubmit_impl.main(run_golint=True, run_govet=True))
+  sys.exit(presubmit_impl.main(tags='', run_golint=True, run_govet=True))
